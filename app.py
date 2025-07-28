@@ -52,10 +52,20 @@ fig.update_layout(
 )
 fig.update_xaxes(scaleanchor="y", scaleratio=1)
 
-# Capture clicks
-clicked_points = plotly_events(fig, click_event=True, hover_event=False, select_event=False)
+# ✅ Capture clicks with debug output
+clicked_points = plotly_events(
+    fig,
+    click_event=True,
+    hover_event=False,
+    select_event=False,
+    key="pitch"
+)
 
-# Store clicked points
+# ✅ Debugging: Show raw click data so we can confirm clicks are being captured
+st.write("### DEBUG: Raw Click Data")
+st.write(clicked_points)
+
+# Store clicked points in session state
 if clicked_points:
     x, y = clicked_points[0]["x"], clicked_points[0]["y"]
     st.session_state.data.loc[len(st.session_state.data)] = [x, y, event_type]
@@ -68,4 +78,5 @@ st.write(st.session_state.data)
 if not st.session_state.data.empty:
     csv = st.session_state.data.to_csv(index=False).encode("utf-8")
     st.download_button("Download Tagged Events CSV", csv, "tagged_events.csv", "text/csv")
+
 
