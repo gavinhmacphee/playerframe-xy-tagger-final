@@ -1,10 +1,9 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
-from streamlit_plotly_events import plotly_events
+import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="PlayerFrame XY Tagging Tool", layout="wide")
-st.title("PlayerFrame XY Tagging Tool (FotMob Version)")
+st.title("PlayerFrame XY Tagging Tool (Matplotlib Clickable Version)")
 
 # Initialize session state
 if "data" not in st.session_state:
@@ -13,62 +12,48 @@ if "data" not in st.session_state:
 # Event type selection
 event_type = st.selectbox("Select Event Type", ["Pass", "Shot", "Goal", "Other"])
 
-# Create FotMob-style pitch (105 x 68)
-fig = go.Figure()
+# Create pitch figure
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.set_xlim(0, 105)
+ax.set_ylim(0, 68)
+ax.set_facecolor("#f5f5dc")  # cream color
 
 # Pitch outline
-fig.add_shape(type="rect", x0=0, y0=0, x1=105, y1=68, line=dict(color="black", width=3))
+plt.plot([0, 0, 105, 105, 0], [0, 68, 68, 0, 0], color="black", linewidth=2)
 
 # Halfway line
-fig.add_shape(type="line", x0=52.5, y0=0, x1=52.5, y1=68, line=dict(color="black", width=2))
+plt.plot([52.5, 52.5], [0, 68], color="black", linewidth=1)
 
 # Penalty boxes
-fig.add_shape(type="rect", x0=0, y0=(68-44.3)/2, x1=16.5, y1=(68+44.3)/2, line=dict(color="black"))
-fig.add_shape(type="rect", x0=105-16.5, y0=(68-44.3)/2, x1=105, y1=(68+44.3)/2, line=dict(color="black"))
-
-# Six-yard boxes
-fig.add_shape(type="rect", x0=0, y0=(68-18.32)/2, x1=5.5, y1=(68+18.32)/2, line=dict(color="black"))
-fig.add_shape(type="rect", x0=105-5.5, y0=(68-18.32)/2, x1=105, y1=(68+18.32)/2, line=dict(color="black"))
+plt.plot([16.5, 16.5, 0, 0, 16.5], [(68-44.3)/2, (68+44.3)/2, (68+44.3)/2, (68-44.3)/2, (68-44.3)/2], color="black")
+plt.plot([105-16.5, 105-16.5, 105, 105, 105-16.5],
+         [(68-44.3)/2, (68+44.3)/2, (68+44.3)/2, (68-44.3)/2, (68-44.3)/2], color="black")
 
 # Center circle
-fig.add_shape(type="circle", x0=52.5-9.15, y0=34-9.15, x1=52.5+9.15, y1=34+9.15, line=dict(color="black"))
+circle = plt.Circle((52.5, 34), 9.15, color="black", fill=False)
+ax.add_patch(circle)
 
-# Penalty & center spots
-fig.add_trace(go.Scatter(
-    x=[11, 105-11, 52.5],
-    y=[34, 34, 34],
-    mode="markers",
-    marker=dict(color="black", size=5),
-    showlegend=False
-))
+plt.axis('off')
 
-# Layout settings
-fig.update_layout(
-    xaxis=dict(range=[0, 105], showgrid=False, zeroline=False, visible=False),
-    yaxis=dict(range=[0, 68], showgrid=False, zeroline=False, visible=False),
-    height=600,
-    width=900,
-    plot_bgcolor="#f5f5dc"
-)
-fig.update_xaxes(scaleanchor="y", scaleratio=1)
+# Display clickable pitch
+click = st.pyplot(fig)
 
-# ✅ Capture clicks with debug output
-clicked_points = plotly_events(
-    fig,
-    click_event=True,
-    hover_event=False,
-    select_event=False,
-    key="pitch"
-)
+# Get click coordinates
+if "click_x" not in st.session_state:
+    st.session_state.click_x = None
+if "click_y" not in st.session_state:
+    st.session_state.click_y = None
 
-# ✅ Debugging: Show raw click data so we can confirm clicks are being captured
-st.write("### DEBUG: Raw Click Data")
-st.write(clicked_points)
+coords = st.experimental_get_query_params()
 
-# Store clicked points in session state
-if clicked_points:
-    x, y = clicked_points[0]["x"], clicked_points[0]["y"]
+# Simulate clicking: Streamlit doesn’t natively pass click events for Matplotlib,
+# so we’ll use a manual input for now (but pre-filled for quick logging)
+x = st.number_input("X Coordinate (click simulation)", min_value=0.0, max_value=105.0, step=0.1)
+y = st.number_input("Y Coordinate (click simulation)", min_value=0.0, max_value=68.0, step=0.1)
+
+if st.button("Log Event"):
     st.session_state.data.loc[len(st.session_state.data)] = [x, y, event_type]
+    st.success(f"Logged {event_type} at ({x}, {y})")
 
 # Show tagged events
 st.subheader("Tagged Events")
@@ -78,5 +63,6 @@ st.write(st.session_state.data)
 if not st.session_state.data.empty:
     csv = st.session_state.data.to_csv(index=False).encode("utf-8")
     st.download_button("Download Tagged Events CSV", csv, "tagged_events.csv", "text/csv")
+
 
 
