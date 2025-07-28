@@ -35,19 +35,10 @@ ax.add_patch(circle)
 
 plt.axis('off')
 
-# Display clickable pitch
-click = st.pyplot(fig)
+# Display pitch
+st.pyplot(fig)
 
-# Get click coordinates
-if "click_x" not in st.session_state:
-    st.session_state.click_x = None
-if "click_y" not in st.session_state:
-    st.session_state.click_y = None
-
-coords = st.experimental_get_query_params()
-
-# Simulate clicking: Streamlit doesn’t natively pass click events for Matplotlib,
-# so we’ll use a manual input for now (but pre-filled for quick logging)
+# Coordinate inputs (click simulation)
 x = st.number_input("X Coordinate (click simulation)", min_value=0.0, max_value=105.0, step=0.1)
 y = st.number_input("Y Coordinate (click simulation)", min_value=0.0, max_value=68.0, step=0.1)
 
